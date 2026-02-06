@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>千里命稿 - 游戏化学习</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .title {
+            font-size: 32px;
+            color: #58cc02;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            color: #777;
+            font-size: 16px;
+        }
+
+        .progress-section {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .progress-item {
+            flex: 1;
+            background: #f7f6f3;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .progress-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #58cc02;
+        }
+
+        .progress-label {
+            color: #777;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .level-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .level-card:hover:not(.locked) {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .level-card.current {
+            border-color: #58cc02;
+            box-shadow: 0 4px 20px rgba(88, 204, 2, 0.2);
+        }
+
+        .level-card.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .level-card.completed {
+            background: linear-gradient(135deg, #58cc02 0%, #4cb202 100%);
+            color: white;
+        }
+
+        .level-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 12px;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .level-title {
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .level-stars {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .star {
+            color: #ffd700;
+            font-size: 16px;
+        }
+
+        .star.empty {
+            color: #ddd;
+        }
+
+        .quiz-container {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 20px;
+            display: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .quiz-container.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .question-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            padding: 16px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: #58cc02;
+            background: #f0fdf4;
+        }
+
+        .option-btn.correct {
+            border-color: #58cc02;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .option-btn.wrong {
+            border-color: #dc2626;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+        }
+
+        .quiz-progress {
+            background: #e5e7eb;
+            border-radius: 10px;
+            height: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .quiz-progress-bar {
+            background: linear-gradient(90deg, #58cc02 0%, #4cb202 100%);
+            height: 100%;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .feedback {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            font-size: 18px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback.correct {
+            background: #dcfce7;
+            color: #166534;
+            border: 2px solid #58cc02;
+        }
+
+        .feedback.wrong {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #dc2626;
+        }
+
+        .next-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #58cc02 0%, #4cb202 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .next-btn.show {
+            display: block;
+        }
+
+        .next-btn:hover {
+            background: #4cb202;
+            transform: scale(1.02);
+        }
+
+        .streak-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            z-index: 1000;
+        }
+
+        .fire-icon {
+            margin-right: 8px;
+            font-size: 24px;
+        }
+
+        .knowledge-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .knowledge-card.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .knowledge-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .knowledge-content {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .knowledge-extra {
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .knowledge-extra h4 {
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .knowledge-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .knowledge-table th,
+        .knowledge-table td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .knowledge-table th {
+            background: rgba(0,0,0,0.2);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .knowledge-table td {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .knowledge-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .knowledge-list li {
+            padding: 4px 0;
+            color: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .knowledge-list li:before {
+            content: "•";
+            margin-right: 8px;
+            margin-top: 2px;
+            color: #58cc02;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .result-screen {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            display: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .result-screen.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        .result-stars {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .result-message {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .result-score {
+            font-size: 64px;
+            font-weight: 800;
+            color: #58cc02;
+            margin-bottom: 8px;
+        }
+
+        .continue-btn {
+            margin-top: 24px;
+            padding: 16px 48px;
+            background: linear-gradient(90deg, #58cc02 0%, #4cb202 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .continue-btn:hover {
+            background: #4cb202;
+            transform: scale(1.02);
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 24px;
+            }
+
+            .question-text {
+                font-size: 16px;
+            }
+
+            .option-btn {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="streak-badge" id="streakBadge" style="display: none;">
+        <span class="fire-icon">🔥</span>
+        <span id="streakCount">0</span> 天连胜
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">千里命稿</h1>
+            <p class="subtitle">每日命理学习·循序渐进掌握八字智慧</p>
+
+            <div class="progress-section">
+                <div class="progress-item">
+                    <div class="progress-value" id="totalPoints">0</div>
+                    <div class="progress-label">总积分</div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-value" id="levelsCompleted">0/12</div>
+                    <div class="progress-label">完成关卡</div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-value" id="accuracy">0%</div>
+                    <div class="progress-label">正确率</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="level-grid" id="levelGrid">
+            <!-- 关卡将通过JS动态生成 -->
+        </div>
+
+        <div class="quiz-container" id="quizContainer">
+            <div class="question-text" id="questionText"></div>
+            <div class="options-grid" id="optionsGrid"></div>
+            <div class="quiz-progress">
+                <div class="quiz-progress-bar" id="quizProgressBar"></div>
+            </div>
+            <div class="feedback" id="feedback"></div>
+            <button class="next-btn" id="nextBtn">继续</button>
+            <div class="knowledge-card" id="knowledgeCard">
+                <div class="knowledge-title">💡 知识详解</div>
+                <div class="knowledge-content" id="knowledgeContent"></div>
+                <div class="knowledge-extra" id="knowledgeExtra"></div>
+            </div>
+        </div>
+
+        <div class="result-screen" id="resultScreen">
+            <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+            <div class="result-message" id="resultMessage">太棒了!</div>
+            <div class="result-score" id="resultScore">100</div>
+            <p style="color: #777; margin-bottom: 20px;">积分</p>
+            <button class="continue-btn" id="continueBtn">继续学习</button>
+        </div>
+    </div>
+
+    <script>
+        // 命理知识库 - 扩展知识点
+        const destinyKnowledge = {
+            tenStems: [
+                { name: '甲', five: '木', yinyang: '阳', desc: '甲为阳木，如参天大树，代表生机勃发' },
+                { name: '乙', five: '木', yinyang: '阴', desc: '乙为阴木，如花草藤蔓，代表柔韧生长' },
+                { name: '丙', five: '火', yinyang: '阳', desc: '丙为阳火，如太阳之光，代表光明温暖' },
+                { name: '丁', five: '火', yinyang: '阴', desc: '丁为阴火，如灯烛之明，代表细腻温暖' },
+                { name: '戊', five: '土', yinyang: '阳', desc: '戊为阳土，如高山之石，代表厚重稳重' },
+                { name: '己', five: '土', yinyang: '阴', desc: '己为阴土，如田园之泥，代表温和包容' },
+                { name: '庚', five: '金', yinyang: '阳', desc: '庚为阳金，如刀剑之锋，代表刚强有力' },
+                { name: '辛', five: '金', yinyang: '阴', desc: '辛为阴金，如首饰之饰，代表精美细致' },
+                { name: '壬', five: '水', yinyang: '阳', desc: '壬为阳水，如江河湖海，代表奔流不息' },
+                { name: '癸', five: '水', yinyang: '阴', desc: '癸为阴水，如雨露霜雪，代表润泽滋养' }
+            ],
+            
+            twelveBranches: [
+                { name: '子', five: '水', month: '十一月', season: '冬', desc: '子为鼠，水旺之时，阳气初生' },
+                { name: '丑', five: '土', month: '十二月', season: '冬', desc: '丑为牛，土旺之时，寒冷封藏' },
+                { name: '寅', five: '木', month: '正月', season: '春', desc: '寅为虎，木旺之时，万物萌发' },
+                { name: '卯', five: '木', month: '二月', season: '春', desc: '卯为兔，木旺之时，生机勃勃' },
+                { name: '辰', five: '土', month: '三月', season: '春', desc: '辰为龙，土旺之时，春意盎然' },
+                { name: '巳', five: '火', month: '四月', season: '夏', desc: '巳为蛇，火旺之时，炎夏初临' },
+                { name: '午', five: '火', month: '五月', season: '夏', desc: '午为马，火旺之时，盛夏酷热' },
+                { name: '未', five: '土', month: '六月', season: '夏', desc: '未为羊，土旺之时，夏末秋初' },
+                { name: '申', five: '金', month: '七月', season: '秋', desc: '申为猴，金旺之时，秋高气爽' },
+                { name: '酉', five: '金', month: '八月', season: '秋', desc: '酉为鸡，金旺之时，金秋硕果' },
+                { name: '戌', five: '土', month: '九月', season: '秋', desc: '戌为狗，土旺之时，秋意浓厚' },
+                { name: '亥', five: '水', month: '十月', season: '冬', desc: '亥为猪，水旺之时，冬寒初降' }
+            ],
+
+            seasonMap: {
+                '春': ['寅月(正月)', '卯月(二月)', '辰月(三月)'],
+                '夏': ['巳月(四月)', '午月(五月)', '未月(六月)'],
+                '秋': ['申月(七月)', '酉月(八月)', '戌月(九月)'],
+                '冬': ['亥月(十月)', '子月(十一月)', '丑月(十二月)']
+            },
+
+            fiveElements: {
+                '金': { desc: '金主刚强，代表变革、决断、法律', season: '秋', color: '白' },
+                '木': { desc: '木主生长，代表生机、创造、仁爱', season: '春', color: '青' },
+                '水': { desc: '水主智慧，代表流动、适应、学习', season: '冬', color: '黑' },
+                '火': { desc: '火主热情，代表光明、礼貌、文明', season: '夏', color: '红' },
+                '土': { desc: '土主诚信，代表稳重、包容、承载', season: '四季末', color: '黄' }
+            },
+
+            sixGods: {
+                '正官': '克我而与我异性，代表权威、地位、正直',
+                '七杀': '克我而与我同性，代表魄力、威严、压力',
+                '正印': '生我而与我异性，代表学识、贵人、保护',
+                '偏印': '生我而与我同性，代表才华、直觉、独特',
+                '比肩': '同我而与我同性，代表同辈、伙伴、竞争',
+                '劫财': '同我而与我异性，代表朋友、兄弟、冒险',
+                '食神': '我生而与我同性，代表才华、创意、享受',
+                '伤官': '我生而与我异性，代表叛逆、表现、聪明',
+                '正财': '我克而与我异性，代表正财、稳健、守成',
+                '偏财': '我克而与我同性，代表横财、商业、机遇'
+            }
+        };
+
+        // 学习进度数据
+        let userProgress = {
+            totalPoints: 0,
+            levelsCompleted: 0,
+            streak: 0,
+            lastStudyDate: null,
+            correctAnswers: 0,
+            totalAnswers: 0,
+            completedLevels: []
+        };
+
+        // 关卡数据
+        const levels = [
+            {
+                id: 1,
+                title: "天干基础",
+                icon: "🌟",
+                questions: [
+                    {
+                        question: "十天干中，甲乙属什么五行？",
+                        options: ["金", "木", "水", "火"],
+                        correct: 1,
+                        knowledge: "甲乙寅卯皆为木。甲为阳木，乙为阴木，代表春天的生机。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "丙丁属于什么五行？",
+                        options: ["火", "土", "金", "水"],
+                        correct: 0,
+                        knowledge: "丙丁巳午皆为火。丙为阳火，如太阳之光；丁为阴火，如灯烛之明。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "庚辛代表什么五行？",
+                        options: ["木", "火", "金", "土"],
+                        correct: 2,
+                        knowledge: "庚辛申酉皆为金。庚为阳金，如刀剑；辛为阴金，如首饰。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "壬癸属于什么五行？",
+                        options: ["土", "木", "火", "水"],
+                        correct: 3,
+                        knowledge: "壬癸亥子皆为水。壬为阳水，如江河湖海；癸为阴水，如雨露霜雪。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "戊己属于什么五行？",
+                        options: ["金", "水", "木", "土"],
+                        correct: 3,
+                        knowledge: "戊己辰戌丑未皆为土。戊为阳土，如高山；己为阴土，如田园。",
+                        extraType: "tenStems"
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "地支基础",
+                icon: "🌙",
+                questions: [
+                    {
+                        question: "子月对应农历几月？",
+                        options: ["十一月", "十二月", "一月", "二月"],
+                        correct: 0,
+                        knowledge: "子月为农历十一月，是一年之末，阳气初生之时。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "寅月属于什么季节？",
+                        options: ["春", "夏", "秋", "冬"],
+                        correct: 0,
+                        knowledge: "寅月为农历正月，属于春季，万物萌发之时。",
+                        extraType: "seasons"
+                    },
+                    {
+                        question: "申月属于什么季节？",
+                        options: ["春", "夏", "秋", "冬"],
+                        correct: 2,
+                        knowledge: "申月为农历七月，属于秋季，金旺之时，秋高气爽。",
+                        extraType: "seasons"
+                    },
+                    {
+                        question: "巳午未属于哪个季节？",
+                        options: ["春", "夏", "秋", "冬"],
+                        correct: 1,
+                        knowledge: "巳月四月、午月五月、未月六月，皆属夏季，火土相生，炎炎夏日。",
+                        extraType: "seasons"
+                    },
+                    {
+                        question: "亥子丑属于哪个季节？",
+                        options: ["春", "夏", "秋", "冬"],
+                        correct: 3,
+                        knowledge: "亥月十月、子月十一月、丑月十二月，皆属冬季，水旺之时，冬寒封藏。",
+                        extraType: "seasons"
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: "五行生克",
+                icon: "🌿",
+                questions: [
+                    {
+                        question: "五行相生的顺序是什么？",
+                        options: ["金木水火土", "木火土金水", "水木火土金", "火土金水木"],
+                        correct: 1,
+                        knowledge: "五行相生：木生火，火生土，土生金，金生水，水生木。",
+                        extraType: "fiveElements"
+                    },
+                    {
+                        question: "木克什么五行？",
+                        options: ["金", "火", "土", "水"],
+                        correct: 2,
+                        knowledge: "木克土。木的根能破土而出，代表木的力量克制土。",
+                        extraType: "fiveElements"
+                    },
+                    {
+                        question: "火克什么五行？",
+                        options: ["土", "木", "金", "水"],
+                        correct: 2,
+                        knowledge: "火克金。火能熔化金属，代表火的力量克制金。",
+                        extraType: "fiveElements"
+                    },
+                    {
+                        question: "水克什么五行？",
+                        options: ["木", "金", "土", "火"],
+                        correct: 3,
+                        knowledge: "水克火。水能灭火，代表水的力量克制火。",
+                        extraType: "fiveElements"
+                    },
+                    {
+                        question: "土克什么五行？",
+                        options: ["火", "金", "木", "水"],
+                        correct: 3,
+                        knowledge: "土克水。土能挡水、治水，代表土的力量克制水。",
+                        extraType: "fiveElements"
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "天干阴阳",
+                icon: "☯️",
+                questions: [
+                    {
+                        question: "甲是阳还是阴？",
+                        options: ["阳", "阴", "中性", "不确定"],
+                        correct: 0,
+                        knowledge: "甲为阳木，如参天大树，代表阳刚之气。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "乙是阳还是阴？",
+                        options: ["阳", "阴", "中性", "不确定"],
+                        correct: 1,
+                        knowledge: "乙为阴木，如花草藤蔓，代表阴柔之美。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "以下哪个属于阳干？",
+                        options: ["乙", "丁", "己", "庚"],
+                        correct: 3,
+                        knowledge: "甲丙戊庚壬为阳干，乙丁己辛癸为阴干。庚为阳金。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "以下哪个属于阴干？",
+                        options: ["甲", "丙", "戊", "辛"],
+                        correct: 3,
+                        knowledge: "甲丙戊庚壬为阳干，乙丁己辛癸为阴干。辛为阴金。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "壬癸分别属于什么阴阳？",
+                        options: ["阳阳", "阴阴", "阳阴", "不确定"],
+                        correct: 2,
+                        knowledge: "壬为阳水，如江河湖海，奔流不息；癸为阴水，如雨露霜雪，润泽滋养。壬为阳干，癸为阴干。",
+                        extraType: "tenStems"
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: "地支阴阳",
+                icon: "🔄",
+                questions: [
+                    {
+                        question: "子是阳还是阴？",
+                        options: ["阳", "阴", "中性", "不确定"],
+                        correct: 1,
+                        knowledge: "子为阴水，阳气初生之时，水旺而阴气尚存。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "寅是阳还是阴？",
+                        options: ["阳", "阴", "中性", "不确定"],
+                        correct: 0,
+                        knowledge: "寅为阳木，代表春季阳气勃发之时。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "以下哪些属于阳支？",
+                        options: ["子丑", "寅卯", "寅申", "卯戌"],
+                        correct: 2,
+                        knowledge: "寅辰巳申戌亥为阳支，子丑卯午未酉为阴支。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "以下哪些属于阴支？",
+                        options: ["寅卯", "子丑", "辰巳", "申亥"],
+                        correct: 1,
+                        knowledge: "寅辰巳申戌亥为阳支，子丑卯午未酉为阴支。子丑皆为阴支。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "申酉分别属于什么阴阳？",
+                        options: ["阳阳", "阴阴", "阴阳", "不确定"],
+                        correct: 0,
+                        knowledge: "申为阳金，秋高气爽；酉为阴金，金秋硕果。二者皆为金，但阴阳不同。",
+                        extraType: "twelveBranches"
+                    }
+                ]
+            },
+            {
+                id: 6,
+                title: "天干合化",
+                icon: "🤝",
+                questions: [
+                    {
+                        question: "甲己合化为什么五行？",
+                        options: ["金", "木", "水", "土"],
+                        correct: 3,
+                        knowledge: "甲己合化土。甲为阳木，己为阴土，木克土而化土。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "乙庚合化为什么五行？",
+                        options: ["金", "木", "水", "火"],
+                        correct: 0,
+                        knowledge: "乙庚合化金。乙为阴木，庚为阳金，木受克而化金。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "丙辛合化为什么五行？",
+                        options: ["火", "水", "金", "土"],
+                        correct: 1,
+                        knowledge: "丙辛合化水。丙为阳火，辛为阴金，火克金而化水。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "丁壬合化为什么五行？",
+                        options: ["水", "火", "木", "土"],
+                        correct: 2,
+                        knowledge: "丁壬合化木。丁为阴火，壬为阳水，水克火而化木。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "戊癸合化为什么五行？",
+                        options: ["土", "金", "水", "火"],
+                        correct: 3,
+                        knowledge: "戊癸合化火。戊为阳土，癸为阴水，土克水而化火。",
+                        extraType: "tenStems"
+                    }
+                ]
+            },
+            {
+                id: 7,
+                title: "地支三合",
+                icon: "🔗",
+                questions: [
+                    {
+                        question: "申子辰三合化为什么五行？",
+                        options: ["金", "木", "水", "火"],
+                        correct: 2,
+                        knowledge: "申子辰三合水局。申为金，子为水，辰为土，金水相生而化水。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "亥卯未三合化为什么五行？",
+                        options: ["金", "木", "水", "火"],
+                        correct: 1,
+                        knowledge: "亥卯未三合木局。亥为水，卯为木，未为土，水木相生而化木。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "寅午戌三合化为什么五行？",
+                        options: ["火", "水", "金", "土"],
+                        correct: 0,
+                        knowledge: "寅午戌三合火局。寅为木，午为火，戌为土，木火相生而化火。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "巳酉丑三合化为什么五行？",
+                        options: ["土", "火", "金", "水"],
+                        correct: 2,
+                        knowledge: "巳酉丑三合金局。巳为火，酉为金，丑为土，火金相生而化金。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "地支三合的作用是什么？",
+                        options: ["相冲", "相害", "增强五行力量", "减弱五行力量"],
+                        correct: 2,
+                        knowledge: "地支三合是三个地支组合，会合化成一种五行，增强该五行的力量。",
+                        extraType: "fiveElements"
+                    }
+                ]
+            },
+            {
+                id: 8,
+                title: "六神基础",
+                icon: "🎭",
+                questions: [
+                    {
+                        question: "正官是怎么构成的？",
+                        options: ["生我而与我异性", "克我而与我异性", "我克而与我异性", "我生而与我异性"],
+                        correct: 1,
+                        knowledge: "正官是克我而与我异性。如甲木见辛金，甲为阳木，辛为阴金，金克木为正官。",
+                        extraType: "sixGods"
+                    },
+                    {
+                        question: "正印是怎么构成的？",
+                        options: ["克我而与我同性", "生我而与我异性", "我生而与我同性", "我克而与我同性"],
+                        correct: 1,
+                        knowledge: "正印是生我而与我异性。如甲木见癸水，甲为阳木，癸为阴水，水生木为正印。",
+                        extraType: "sixGods"
+                    },
+                    {
+                        question: "正财是怎么构成的？",
+                        options: ["克我而与我同性", "生我而与我异性", "我克而与我异性", "我生而与我异性"],
+                        correct: 2,
+                        knowledge: "正财是我克而与我异性。如甲木见己土，甲为阳木，己为阴土，木克土为正财。",
+                        extraType: "sixGods"
+                    },
+                    {
+                        question: "伤官是怎么构成的？",
+                        options: ["克我而与我同性", "生我而与我异性", "我生而与我异性", "我克而与我同性"],
+                        correct: 2,
+                        knowledge: "伤官是我生而与我异性。如甲木见丁火，甲为阳木，丁为阴火，木生火为伤官。",
+                        extraType: "sixGods"
+                    },
+                    {
+                        question: "七杀是怎么构成的？",
+                        options: ["克我而与我异性", "生我而与我同性", "我生而与我同性", "克我而与我同性"],
+                        correct: 3,
+                        knowledge: "七杀是克我而与我同性。如甲木见庚金，甲为阳木，庚为阳金，金克木为七杀。",
+                        extraType: "sixGods"
+                    }
+                ]
+            },
+            {
+                id: 9,
+                title: "身强身弱",
+                icon: "💪",
+                questions: [
+                    {
+                        question: "甲木生于寅月，属于？",
+                        options: ["身弱", "身强", "中和", "偏弱"],
+                        correct: 1,
+                        knowledge: "甲木生于寅月（春季），木当令旺相，属于得令身强。",
+                        extraType: "seasons"
+                    },
+                    {
+                        question: "甲木生于酉月，属于？",
+                        options: ["身强", "身弱", "中和", "偏强"],
+                        correct: 1,
+                        knowledge: "甲木生于酉月（秋季），金旺克木，木失令衰弱，属于身弱。",
+                        extraType: "seasons"
+                    },
+                    {
+                        question: "身强喜什么？",
+                        options: ["印星帮扶", "比劫帮助", "食伤财官", "食伤财官和印星"],
+                        correct: 2,
+                        knowledge: "身强喜抑，即喜食伤（泄）、财星（分）、官杀（克），不喜印星帮扶和比劫帮助。",
+                        extraType: "fiveElements"
+                    },
+                    {
+                        question: "身弱喜什么？",
+                        options: ["食伤泄气", "财星分力", "官杀克制", "印星帮扶和比劫帮助"],
+                        correct: 3,
+                        knowledge: "身弱喜扶，即喜印星（生）和比劫（帮），不喜食伤泄气、财星分力、官杀克制。",
+                        extraType: "fiveElements"
+                    },
+                    {
+                        question: "判断身强身弱，最重要的依据是？",
+                        options: ["年柱", "月令", "日柱", "时柱"],
+                        correct: 1,
+                        knowledge: "判断身强身弱，最重要的依据是月令（出生月份），其次看四柱中帮扶或克泄的力量。",
+                        extraType: "seasons"
+                    }
+                ]
+            },
+            {
+                id: 10,
+                title: "十神应用",
+                icon: "🎯",
+                questions: [
+                    {
+                        question: "正官代表什么？",
+                        options: ["财富", "事业地位", "学识才华", "健康"],
+                        correct: 1,
+                        knowledge: "正官代表事业、地位、权威、正直、法律，是命理中的吉神。",
+                        extraType: "sixGods"
+                    },
+                    {
+                        question: "正财代表什么？",
+                        options: ["横财", "正财稳健", "商业机遇", "冒险精神"],
+                        correct: 1,
+                        knowledge: "正财代表稳定的收入、工资、正财，是努力工作获得的回报。",
+                        extraType: "sixGods"
+                    },
+                    {
+                        question: "正印代表什么？",
+                        options: ["才华", "学识贵人", "同辈朋友", "魄力威严"],
+                        correct: 1,
+                        knowledge: "正印代表学识、文凭、贵人、母亲、保护，是命理中的吉神。",
+                        extraType: "sixGods"
+                    },
+                    {
+                        question: "食神代表什么？",
+                        options: ["叛逆", "权威", "才华创意", "商业"],
+                        correct: 2,
+                        knowledge: "食神代表才华、创意、艺术、享受、口福，是命理中的吉神。",
+                        extraType: "sixGods"
+                    },
+                    {
+                        question: "伤官代表什么？",
+                        options: ["正直", "稳重", "叛逆表现", "温和"],
+                        correct: 2,
+                        knowledge: "伤官代表叛逆、表现、聪明、创新，但也代表傲慢、冲动。",
+                        extraType: "sixGods"
+                    }
+                ]
+            },
+            {
+                id: 11,
+                title: "神煞简介",
+                icon: "⭐",
+                questions: [
+                    {
+                        question: "羊刃是什么神煞？",
+                        options: ["吉神", "凶神", "中性", "不确定"],
+                        correct: 1,
+                        knowledge: "羊刃是凶神，主刚强好斗，但也主胆大有作为。阳干见帝旺为羊刃。",
+                        extraType: "tenStems"
+                    },
+                    {
+                        question: "华盖主什么？",
+                        options: ["财富", "艺术宗教", "官运", "健康"],
+                        correct: 1,
+                        knowledge: "华盖主艺术天赋，利宗教玄学，利学术研究，是才华之星。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "文昌星代表什么？",
+                        options: ["武力", "文学艺术", "财富", "权力"],
+                        correct: 1,
+                        knowledge: "文昌星代表文学、艺术、学术、考试，是利于读书学习的吉星。",
+                        extraType: "twelveBranches"
+                    },
+                    {
+                        question: "桃花主什么？",
+                        options: ["财运", "异性缘", "官运", "健康"],
+                        correct: 1,
+                        knowledge: "桃花主异性缘、魅力、人缘，也主感情纠葛，有利有弊。",
+                        extraType: "twelveBranches"
+                    }
+                ]
+            },
+            {
+                id: 12,
+                title: "综合应用",
+                icon: "🎓",
+                questions: [
+                    {
+                        question: "甲木日干，生于寅月，四柱多水多木，属于？",
+                        options: ["身弱", "身强", "中和", "偏弱"],
+                        correct: 1,
+                        knowledge: "甲木生于寅月，木当令，又多水木帮扶，属于身强。",
+                        extraType: "fiveElements"
+                    },
+                    {
+                        question: "甲木日干，见辛金，属于什么？",
+                        options: ["正官", "七杀", "偏财", "正财"],
+                        correct: 0,
+                        knowledge: "甲木日干见辛金，甲为阳木，辛为阴金，阳见阴，且金克木，为正官。",
+                        extraType: "sixGods"
+                    },
+                    {
+                        question: "甲木日干，见己土，属于什么？",
+                        options: ["正财", "偏财", "伤官", "食神"],
+                        correct: 0,
+                        knowledge: "甲木日干见己土，甲为阳木，己为阴土，阳见阴，且木克土，为正财。",
+                        extraType: "sixGods"
+                    },
+                    {
+                        question: "身强喜什么？",
+                        options: ["印星", "比劫", "食伤财官", "比劫印星"],
+                        correct: 2,
+                        knowledge: "身强喜食伤财官，即喜泄、喜克、喜分，不喜欢生扶。",
+                        extraType: "fiveElements"
+                    },
+                    {
+                        question: "八字最重视什么？",
+                        options: ["年柱", "月柱", "日柱", "四柱平衡"],
+                        correct: 3,
+                        knowledge: "八字最重视四柱平衡，五行中和，不偏不倚为上。",
+                        extraType: "fiveElements"
+                    }
+                ]
+            }
+        ];
+
+        let currentLevel = null;
+        let currentQuestionIndex = 0;
+        let currentScore = 0;
+        let levelQuestions = [];
+
+        // 生成扩展知识点HTML
+        function generateExtraKnowledge(extraType) {
+            let html = '';
+            
+            switch(extraType) {
+                case 'tenStems':
+                    html += `
+                        <h4>📚 十天干详解</h4>
+                        <table class="knowledge-table">
+                            <thead>
+                                <tr>
+                                    <th>天干</th>
+                                    <th>五行</th>
+                                    <th>阴阳</th>
+                                    <th>含义</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    destinyKnowledge.tenStems.forEach(stem => {
+                        html += `
+                            <tr>
+                                <td><strong>${stem.name}</strong></td>
+                                <td>${stem.five}</td>
+                                <td>${stem.yinyang}</td>
+                                <td>${stem.desc}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                    break;
+                    
+                case 'twelveBranches':
+                    html += `
+                        <h4>📚 十二地支详解</h4>
+                        <table class="knowledge-table">
+                            <thead>
+                                <tr>
+                                    <th>地支</th>
+                                    <th>五行</th>
+                                    <th>月份</th>
+                                    <th>季节</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    destinyKnowledge.twelveBranches.forEach(branch => {
+                        html += `
+                            <tr>
+                                <td><strong>${branch.name}</strong></td>
+                                <td>${branch.five}</td>
+                                <td>${branch.month}</td>
+                                <td>${branch.season}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                    break;
+                    
+                case 'seasons':
+                    html += `
+                        <h4>📚 季节与月份对应</h4>
+                        <table class="knowledge-table">
+                            <thead>
+                                <tr>
+                                    <th>季节</th>
+                                    <th>所属月份</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    for (const [season, months] of Object.entries(destinyKnowledge.seasonMap)) {
+                        html += `
+                            <tr>
+                                <td><strong>${season}季</strong></td>
+                                <td>${months.join('、')}</td>
+                            </tr>
+                        `;
+                    }
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                    break;
+                    
+                case 'fiveElements':
+                    html += `
+                        <h4>📚 五行详解</h4>
+                        <table class="knowledge-table">
+                            <thead>
+                                <tr>
+                                    <th>五行</th>
+                                    <th>特点</th>
+                                    <th>所属季节</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    for (const [name, info] of Object.entries(destinyKnowledge.fiveElements)) {
+                        html += `
+                            <tr>
+                                <td><strong>${name}</strong></td>
+                                <td>${info.desc}</td>
+                                <td>${info.season}</td>
+                            </tr>
+                        `;
+                    }
+                    html += `
+                            </tbody>
+                        </table>
+                        <h4 style="margin-top: 12px;">🔄 五行相生相克</h4>
+                        <ul class="knowledge-list">
+                            <li><strong>相生：</strong>木生火 → 火生土 → 土生金 → 金生水 → 水生木</li>
+                            <li><strong>相克：</strong>木克土 → 土克水 → 水克火 → 火克金 → 金克木</li>
+                        </ul>
+                    `;
+                    break;
+                    
+                case 'sixGods':
+                    html += `
+                        <h4>📚 十神详解</h4>
+                        <ul class="knowledge-list">
+                    `;
+                    for (const [name, desc] of Object.entries(destinyKnowledge.sixGods)) {
+                        html += `<li><strong>${name}：</strong>${desc}</li>`;
+                    }
+                    html += `
+                        </ul>
+                        <h4 style="margin-top: 12px;">📝 十神构成口诀</h4>
+                        <ul class="knowledge-list">
+                            <li><strong>正官：</strong>克我异性，代表权威、地位、正直</li>
+                            <li><strong>七杀：</strong>克我同性，代表魄力、威严、压力</li>
+                            <li><strong>正印：</strong>生我异性，代表学识、贵人、保护</li>
+                            <li><strong>偏印：</strong>生我同性，代表才华、直觉、独特</li>
+                            <li><strong>正财：</strong>我克异性，代表正财、稳健、守成</li>
+                            <li><strong>偏财：</strong>我克同性，代表横财、商业、机遇</li>
+                            <li><strong>食神：</strong>我生同性，代表才华、创意、享受</li>
+                            <li><strong>伤官：</strong>我生异性，代表叛逆、表现、聪明</li>
+                        </ul>
+                    `;
+                    break;
+            }
+            
+            return html;
+        }
+
+        // 初始化
+        function init() {
+            loadProgress();
+            renderLevelGrid();
+            updateProgressDisplay();
+            checkStreak();
+        }
+
+        // 加载进度
+        function loadProgress() {
+            const saved = localStorage.getItem('destinyProgress');
+            if (saved) {
+                userProgress = JSON.parse(saved);
+            }
+        }
+
+        // 保存进度
+        function saveProgress() {
+            localStorage.setItem('destinyProgress', JSON.stringify(userProgress));
+        }
+
+        // 检查连胜
+        function checkStreak() {
+            const today = new Date().toDateString();
+            const lastDate = userProgress.lastStudyDate;
+            
+            if (lastDate) {
+                const last = new Date(lastDate);
+                const diffDays = Math.floor((new Date() - last) / (1000 * 60 * 60 * 24));
+                
+                if (diffDays > 1) {
+                    userProgress.streak = 0;
+                    saveProgress();
+                }
+            }
+            
+            if (userProgress.streak > 0) {
+                document.getElementById('streakBadge').style.display = 'flex';
+                document.getElementById('streakCount').textContent = userProgress.streak;
+            }
+        }
+
+        // 更新连胜
+        function updateStreak() {
+            const today = new Date().toDateString();
+            const lastDate = userProgress.lastStudyDate;
+            
+            if (lastDate) {
+                const last = new Date(lastDate);
+                const diffDays = Math.floor((new Date() - last) / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 1) {
+                    userProgress.streak++;
+                } else if (diffDays > 1) {
+                    userProgress.streak = 1;
+                }
+            } else {
+                userProgress.streak = 1;
+            }
+            
+            userProgress.lastStudyDate = today;
+            
+            if (userProgress.streak > 0) {
+                document.getElementById('streakBadge').style.display = 'flex';
+                document.getElementById('streakCount').textContent = userProgress.streak;
+            }
+        }
+
+        // 渲染关卡网格
+        function renderLevelGrid() {
+            const grid = document.getElementById('levelGrid');
+            grid.innerHTML = '';
+            
+            levels.forEach((level, index) => {
+                const card = document.createElement('div');
+                const isCompleted = userProgress.completedLevels.includes(level.id);
+                const isLocked = index > 0 && !userProgress.completedLevels.includes(levels[index - 1].id);
+                
+                card.className = `level-card ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}`;
+                
+                if (index === 0 || !isLocked) {
+                    card.onclick = () => startLevel(level.id);
+                }
+                
+                let stars = '';
+                if (isCompleted) {
+                    stars = '⭐⭐⭐';
+                } else {
+                    stars = '<span class="star empty">⭐</span><span class="star empty">⭐</span><span class="star empty">⭐</span>';
+                }
+                
+                card.innerHTML = `
+                    <div class="level-icon">${level.icon}</div>
+                    <div class="level-title">${level.title}</div>
+                    <div class="level-stars">${stars}</div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // 更新进度显示
+        function updateProgressDisplay() {
+            document.getElementById('totalPoints').textContent = userProgress.totalPoints;
+            document.getElementById('levelsCompleted').textContent = `${userProgress.levelsCompleted}/${levels.length}`;
+            
+            const accuracy = userProgress.totalAnswers > 0 
+                ? Math.round((userProgress.correctAnswers / userProgress.totalAnswers) * 100) 
+                : 0;
+            document.getElementById('accuracy').textContent = `${accuracy}%`;
+        }
+
+        // 开始关卡
+        function startLevel(levelId) {
+            currentLevel = levels.find(l => l.id === levelId);
+            levelQuestions = [...currentLevel.questions].sort(() => Math.random() - 0.5);
+            currentQuestionIndex = 0;
+            currentScore = 0;
+            
+            document.getElementById('levelGrid').style.display = 'none';
+            document.getElementById('quizContainer').classList.add('active');
+            document.getElementById('resultScreen').classList.remove('show');
+            
+            showQuestion();
+        }
+
+        // 显示问题
+        function showQuestion() {
+            const question = levelQuestions[currentQuestionIndex];
+            
+            document.getElementById('questionText').textContent = `${currentQuestionIndex + 1}. ${question.question}`;
+            
+            const optionsGrid = document.getElementById('optionsGrid');
+            optionsGrid.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option;
+                btn.onclick = () => selectOption(index, question);
+                optionsGrid.appendChild(btn);
+            });
+            
+            // 更新进度条
+            const progress = ((currentQuestionIndex) / levelQuestions.length) * 100;
+            document.getElementById('quizProgressBar').style.width = `${progress}%`;
+            
+            // 隐藏反馈和知识卡片
+            document.getElementById('feedback').classList.remove('show');
+            document.getElementById('knowledgeCard').classList.remove('show');
+            document.getElementById('nextBtn').classList.remove('show');
+            
+            // 禁用所有选项按钮
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct', 'wrong');
+            });
+        }
+
+        // 选择选项
+        function selectOption(selectedIndex, question) {
+            const buttons = document.querySelectorAll('.option-btn');
+            const feedback = document.getElementById('feedback');
+            const knowledgeCard = document.getElementById('knowledgeCard');
+            const knowledgeContent = document.getElementById('knowledgeContent');
+            const knowledgeExtra = document.getElementById('knowledgeExtra');
+            
+            // 禁用所有按钮
+            buttons.forEach(btn => btn.disabled = true);
+            
+            userProgress.totalAnswers++;
+            
+            if (selectedIndex === question.correct) {
+                buttons[selectedIndex].classList.add('correct');
+                feedback.textContent = '✓ 正确!';
+                feedback.className = 'feedback correct show';
+                currentScore++;
+                userProgress.correctAnswers++;
+            } else {
+                buttons[selectedIndex].classList.add('wrong');
+                buttons[question.correct].classList.add('correct');
+                feedback.textContent = `✗ 正确答案是: ${question.options[question.correct]}`;
+                feedback.className = 'feedback wrong show';
+            }
+            
+            // 显示基础知识点
+            knowledgeContent.textContent = question.knowledge;
+            
+            // 显示扩展知识点
+            if (question.extraType) {
+                knowledgeExtra.innerHTML = generateExtraKnowledge(question.extraType);
+            } else {
+                knowledgeExtra.innerHTML = '';
+            }
+            
+            knowledgeCard.classList.add('show');
+            
+            // 显示继续按钮
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.classList.add('show');
+            
+            if (currentQuestionIndex === levelQuestions.length - 1) {
+                nextBtn.textContent = '查看结果';
+            } else {
+                nextBtn.textContent = '继续';
+            }
+            
+            saveProgress();
+            updateProgressDisplay();
+        }
+
+        // 下一题/结果
+        document.getElementById('nextBtn').onclick = function() {
+            if (currentQuestionIndex < levelQuestions.length - 1) {
+                currentQuestionIndex++;
+                showQuestion();
+            } else {
+                showResult();
+            }
+        };
+
+        // 显示结果
+        function showResult() {
+            document.getElementById('quizContainer').classList.remove('active');
+            document.getElementById('resultScreen').classList.add('show');
+            
+            const score = Math.round((currentScore / levelQuestions.length) * 100);
+            const points = score;
+            
+            userProgress.totalPoints += points;
+            
+            // 计算星星
+            let stars = '⭐';
+            let message = '继续努力!';
+            if (score >= 80) {
+                stars = '⭐⭐⭐';
+                message = '太棒了!';
+            } else if (score >= 60) {
+                stars = '⭐⭐';
+                message = '做得不错!';
+            }
+            
+            // 更新完成关卡
+            if (!userProgress.completedLevels.includes(currentLevel.id)) {
+                userProgress.completedLevels.push(currentLevel.id);
+                userProgress.levelsCompleted = userProgress.completedLevels.length;
+                updateStreak();
+            }
+            
+            document.getElementById('resultStars').textContent = stars;
+            document.getElementById('resultMessage').textContent = message;
+            document.getElementById('resultScore').textContent = points;
+            
+            saveProgress();
+            updateProgressDisplay();
+        }
+
+        // 继续
+        document.getElementById('continueBtn').onclick = function() {
+            document.getElementById('resultScreen').classList.remove('show');
+            document.getElementById('levelGrid').style.display = 'grid';
+            renderLevelGrid();
+            
+            currentLevel = null;
+            currentQuestionIndex = 0;
+            levelQuestions = [];
+        };
+
+        // 初始化应用
+        init();
+    </script>
+</body>
+</html>
